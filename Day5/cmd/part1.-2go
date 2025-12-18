@@ -1,0 +1,126 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+)
+
+type IngredientRange struct {
+	start int
+	end   int
+}
+
+// 356253713443639
+func main() {
+	file, err := os.Open("./input.txt")
+	if err != nil {
+		fmt.Println("error opening file input.txt:", err)
+		return
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
+
+	var ingredientRanges []IngredientRange
+	var ingredientList []int
+	completedRange := false
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			completedRange = true
+		} else if completedRange {
+			ingredient, err := strconv.Atoi(line)
+			if err != nil {
+				fmt.Println("error converting ingredient to int:", err)
+				return
+			}
+
+			ingredientList = append(ingredientList, ingredient)
+		} else {
+			parts := strings.Split(line, "-")
+			done := false
+			start, err := strconv.Atoi(parts[0])
+			if err != nil {
+				fmt.Println("error converting ingredient to int:", err)
+				return
+			}
+
+			end, err := strconv.Atoi(parts[1])
+			if err != nil {
+				fmt.Println("error converting ingredient to int:", err)
+				return
+			}
+
+			ingredientRanges, done = addRange(start, end, ingredientRanges)
+			if done {
+				return
+			}
+		}
+	}
+
+	num := 0
+	for _, ingredient := range ingredientList {
+		if findIngredient(ingredient, ingredientRanges) {
+			num++
+		}
+	}
+	fmt.Println("num is ", num)
+
+	sort.Slice(ingredientRanges, func(i, j int) bool {
+		return ingredientRanges[i].start < ingredientRanges[j].start
+	})
+
+	for _, sortedRange := range ingredientRanges {
+		fmt.Println(sortedRange.start, "-", sortedRange.end)
+	}
+
+	num = 0
+	for _, ingredientRange := range ingredientRanges {
+		num += ingredientRange.end - ingredientRange.start + 1
+	}
+
+	fmt.Println("total ingredients in ranges is ", num)
+}
+
+func addRange(start int, end int, ingredientRanges []IngredientRange) ([]IngredientRange, bool) {
+	for i, ingredientRange := range ingredientRanges {
+		if start >= ingredientRange.start && start <= ingredientRange.end {
+			start = ingredientRange.end + 1
+		}
+
+		if end >= ingredientRange.start && end <= ingredientRange.end {
+			end = ingredientRange.start - 1
+		}
+
+		if start <= ingredientRange.start && ingredientRange.end <= end {
+			ingredientRanges = append(ingredientRanges[:i], ingredientRanges[i+1:]...)
+		}
+
+		if start > end {
+			return ingredientRanges, false
+		}
+	}
+
+	ingredientRange := IngredientRange{start: start, end: end}
+	ingredientRanges = append(ingredientRanges, ingredientRange)
+	return ingredientRanges, false
+}
+
+func findIngredient(ingredient int, ingredientRanges []IngredientRange) bool {
+	for _, ingredientRange := range ingredientRanges {
+		if ingredientRange.start <= ingredient && ingredient <= ingredientRange.end {
+			return true
+		}
+	}
+
+	return false
+}
