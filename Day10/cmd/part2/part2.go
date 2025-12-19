@@ -242,8 +242,9 @@ func gaussJordanSolve(A [][]int, b []int) (int, []int, [][]float64) {
 			continue
 		}
 
-		// Our solution will also not have negative numbers
 		x[c] = int(math.Round(aug[pivotRow][cols]))
+
+		// Our solution will also not have negative numbers
 		if x[c] < 0 {
 			invalid = true
 			continue
@@ -283,7 +284,8 @@ func backSubstitute(matrix [][]float64, freeVars []int, freeValues []int) (int, 
 		if freeSet[col] {
 			continue
 		}
-		// Find the pivot row for this column
+
+		// The current row should be the pivot for the col (since the matrix is in RREF).
 		if matrix[row][col] == 1 {
 			val := matrix[row][n]
 			for j := col + 1; j < n; j++ {
@@ -298,17 +300,19 @@ func backSubstitute(matrix [][]float64, freeVars []int, freeValues []int) (int, 
 	sol := make([]int, n)
 	invalid := false
 	for i, val := range solution {
+		// Our solution will only have integer results
 		mod := math.Mod(val, 1.0)
 		if 0.00001 < mod && mod < 0.99999 {
 			invalid = true
-			continue
+			break
 		}
 
-		// Our solution will also not have negative numbers
 		sol[i] = int(math.Round(val))
+
+		// Our solution will also not have negative numbers
 		if sol[i] < 0 {
 			invalid = true
-			continue
+			break
 		}
 
 		total += sol[i]
