@@ -71,8 +71,7 @@ func main() {
 		return 0
 	})
 
-	for i, rectangle := range rectangles {
-		fmt.Println("rectangle ", i, " area ", rectangle.area)
+	for _, rectangle := range rectangles {
 		if checkRectangle(points, rectangle) {
 			fmt.Println("result is ", rectangle.area)
 			return
@@ -167,8 +166,11 @@ func getRectangleCorners(r Rectangle) [4]Point {
 	}
 }
 
-// segmentIntersectStrictly checks if segment P1Q1 strictly intersects P2Q2 (endpoints excluded).
-// We use this to ensure the rectangle edge does not *cross* the polygon edge.
+// segmentIntersectStrictly checks if segment P1Q1 strictly intersects P2Q2.
+// For the purpose of rectangle containment, we only care about intersections
+// that occur at interior points of the rectangle edge P1Q1.
+// If the intersection is at an endpoint of P1Q1, we've already verified it's
+// inside or on the boundary of the polygon.
 func segmentIntersectStrictly(p1, q1, p2, q2 Point) bool {
 	o1 := orientation(p1, q1, p2)
 	o2 := orientation(p1, q1, q2)
@@ -177,20 +179,18 @@ func segmentIntersectStrictly(p1, q1, p2, q2 Point) bool {
 
 	// General Case: Segments intersect.
 	if o1 != o2 && o3 != o4 {
+		// If the intersection is at an endpoint of either segment,
+		// it is not a "strict" crossing of the boundary for containment purposes.
+		// Since both the polygon and rectangles are axis-aligned (rectilinear),
+		// any crossing that would put the rectangle outside must occur at an
+		// interior point of both segments.
+		if o1 == 0 || o2 == 0 || o3 == 0 || o4 == 0 {
+			return false
+		}
 		return true
 	}
 
-	// Collinearity check: If any endpoint of the segment P1Q1 lies on the interior of P2Q2,
-	// it means P1Q1 is collinear with P2Q2 and overlaps, which we will treat as
-	// *not* a strict crossing, as the boundary is allowed to touch.
-	// The primary check is for a crossing (o1 != o2 && o3 != o4).
-
-	// We are intentionally simplifying the collinear case: if the boundary is allowed to touch/overlap,
-	// the only failure is a true 'crossing' where the rectangle exits and re-enters.
-
-	// If the rectangle edge is collinear with the polygon edge, they are on the boundary,
-	// which is acceptable. Thus, we only return true for the general case.
-	return o1 != o2 && o3 != o4
+	return false
 }
 
 // CheckRectangle determines if the rectangle R resides entirely within the polygon.
